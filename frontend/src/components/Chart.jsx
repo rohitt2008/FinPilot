@@ -15,10 +15,13 @@ const Chart = ({ income, expense }) => {
   };
 
   return (
-    <div className="p-4 mt-6 bg-white shadow rounded-xl">
+    <div className="p-6 transition bg-white shadow rounded-xl hover:shadow-lg">
+      <div className="p-4 mt-6 bg-white shadow rounded-xl">
       <h2 className="mb-3 text-lg font-semibold">Overview</h2>
       <Pie data={data} />
     </div>
+    </div>
+    
   );
 };
 

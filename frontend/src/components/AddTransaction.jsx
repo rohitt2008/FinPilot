@@ -12,7 +12,8 @@ const AddTransaction = ({ refresh }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    await API.post("/api/transactions", form);
+    await API.post("/transactions", form);
+    refresh();
 
     setForm({
       amount: "",
@@ -25,18 +26,18 @@ const AddTransaction = ({ refresh }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-4 rounded-xl shadow mt-6">
-      <h2 className="text-lg font-semibold mb-3">Add Transaction</h2>
+    <form onSubmit={handleSubmit} className="p-4 mt-6 bg-white shadow rounded-xl">
+      <h2 className="mb-3 text-lg font-semibold">Add Transaction</h2>
 
       <input
         placeholder="Amount"
-        className="border p-2 w-full mb-2"
+        className="w-full p-2 mb-2 border"
         value={form.amount}
         onChange={(e) => setForm({ ...form, amount: e.target.value })}
       />
 
       <select
-        className="border p-2 w-full mb-2"
+        className="w-full p-2 mb-2 border"
         value={form.type}
         onChange={(e) => setForm({ ...form, type: e.target.value })}
       >
@@ -46,21 +47,21 @@ const AddTransaction = ({ refresh }) => {
 
       <input
         placeholder="Category"
-        className="border p-2 w-full mb-2"
+        className="w-full p-2 mb-2 border"
         value={form.category}
         onChange={(e) => setForm({ ...form, category: e.target.value })}
       />
 
       <input
         placeholder="Description"
-        className="border p-2 w-full mb-2"
+        className="w-full p-2 mb-2 border"
         value={form.description}
         onChange={(e) => setForm({ ...form, description: e.target.value })}
       />
 
-      <button className="bg-blue-500 text-white px-4 py-2 rounded">
-        Add
-      </button>
+      <button className="w-full py-2 text-white transition bg-blue-600 rounded-lg hover:bg-blue-700">
+  Add Transaction
+</button>
     </form>
   );
 };
