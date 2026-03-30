@@ -17,17 +17,29 @@ router.get("/", protect, getTransactions);
 router.delete("/:id", protect, deleteTransaction);
 
 
+
 router.post(
   "/",
   protect,
   [
-    body("amount").isNumeric().withMessage("Amount must be a number"),
-    body("type").isIn(["income", "expense"]),
-    body("category").notEmpty().withMessage("Category required"),
+    body("amount").isFloat({ gt: 0 }).withMessage("Amount must be positive"),
+    body("type")
+      .isIn(["income", "expense"])
+      .withMessage("Type must be income or expense"),
+    body("category").notEmpty().withMessage("Category is required"),
   ],
   addTransaction
 );
-router.put("/:id", protect, updateTransaction);
+router.put(
+  "/:id",
+  protect,
+  [
+    body("amount").optional().isFloat({ gt: 0 }),
+    body("type").optional().isIn(["income", "expense"]),
+    body("category").optional().notEmpty(),
+  ],
+  updateTransaction
+);
 router.get("/export", protect, exportTransactions);
 
 export default router;
