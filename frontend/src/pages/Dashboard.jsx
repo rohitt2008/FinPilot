@@ -1,15 +1,81 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { Link } from "react-router-dom";
 import API from "../services/api";
 
-import AddTransaction from "../components/AddTransaction";
-import TransactionList from "../components/TransactionList";
 import Chart from "../components/Chart";
 import Insights from "../components/Insights";
-
-import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
 
 
+const CATEGORY_ICONS = {
+  food: "🍜",
+  transport: "🚗",
+  shopping: "🛍️",
+  bills: "📄",
+  salary: "💼",
+  other: "✏️",
+};
+
+const fmt = (v) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(v || 0);
+
+// ── Stat Card ──
+const StatCard = ({ label, value, icon, color }) => (
+  <div className="p-5 bg-white border shadow-sm dark:bg-slate-900 rounded-2xl border-slate-200 dark:border-slate-800">
+    <div className={`w-10 h-10 flex items-center justify-center rounded-xl text-lg ${color}`}>
+      {icon}
+    </div>
+    <p className="mt-3 text-xs uppercase text-slate-400">{label}</p>
+    <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+  </div>
+);
+
+// ── Recent Activity ──
+const RecentActivity = ({ transactions = [], loading }) => (
+  <div className="bg-white border shadow-sm dark:bg-slate-900 rounded-2xl border-slate-200 dark:border-slate-800">
+    <div className="flex justify-between px-5 py-4 border-b dark:border-slate-800">
+      <h3 className="text-sm font-bold dark:text-white">Recent Activity</h3>
+      <Link to="/transactions" className="text-xs text-indigo-500">
+        View all →
+      </Link>
+    </div>
+
+    {loading ? (
+      <p className="p-5 text-sm">Loading...</p>
+    ) : transactions.length === 0 ? (
+      <p className="p-5 text-sm text-gray-500">No transactions</p>
+    ) : (
+      <ul>
+        {transactions.map((t) => {
+          const isIncome = t.type === "income";
+          const icon = CATEGORY_ICONS[t.category?.toLowerCase()] || "💳";
+
+          return (
+            <li key={t._id} className="flex items-center justify-between px-5 py-3 border-b dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <span>{icon}</span>
+                <div>
+                  <p className="text-sm font-semibold capitalize dark:text-white">{t.category}</p>
+                  <p className="text-xs text-gray-400">{t.description}</p>
+                </div>
+              </div>
+
+              <span className={isIncome ? "text-green-500" : "text-red-500"}>
+                {isIncome ? "+" : "-"}₹{t.amount}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    )}
+  </div>
+);
+
+// ── Dashboard ──
 const Dashboard = () => {
   const [data, setData] = useState({
     totalIncome: 0,
@@ -17,23 +83,19 @@ const Dashboard = () => {
     balance: 0,
     alert: null,
   });
-  const [category, setCategory] = useState("");
-  const [customCategory, setCustomCategory] = useState("");
 
-  const [filters, setFilters] = useState({
-    type: "",
-    category: "",
-  });
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [allTransactions, setAllTransactions] = useState([]);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [txLoading, setTxLoading] = useState(true);
 
-  const { dark, setDark } = useContext(ThemeContext);
+  const { dark } = useContext(ThemeContext);
 
+  // 🔥 FETCH ANALYTICS
   const fetchData = async () => {
     try {
       setIsLoading(true);
-
       const res = await API.get("/analytics");
 
       setData({
@@ -43,36 +105,46 @@ const Dashboard = () => {
         alert: res.data?.alert || null,
       });
     } catch (err) {
-      setError("Failed to load analytics");
+      console.error("Analytics error");
     } finally {
       setIsLoading(false);
     }
   };
 
+  // 🔥 FETCH TRANSACTIONS
+  const fetchTransactions = async () => {
+    try {
+      setTxLoading(true);
+
+      const res = await API.get("/transactions?limit=1000");
+      const all = res.data.transactions || res.data;
+
+      setAllTransactions(all);       // for chart
+      setRecentTransactions(all.slice(0, 5)); // for UI
+
+    } catch (err) {
+      console.error("Transaction error");
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchData();
+    fetchTransactions();
   }, []);
 
-  const formatCurrency = (value) =>
-    new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(value || 0);
-
+  // 🔥 EXPORT CSV
   const handleExport = async () => {
     const token = localStorage.getItem("token");
 
-    const response = await fetch(
-      "http://localhost:3000/api/transactions/export",
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const res = await fetch("http://localhost:3000/api/transactions/export", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-    const blob = await response.blob();
+    const blob = await res.blob();
     const url = window.URL.createObjectURL(blob);
 
     const a = document.createElement("a");
@@ -81,130 +153,76 @@ const Dashboard = () => {
     a.click();
   };
 
+  const savingsRate =
+    data.totalIncome > 0
+      ? Math.round(
+          ((data.totalIncome - data.totalExpense) / data.totalIncome) * 100
+        )
+      : 0;
+
   return (
-    <div className="flex">
+    <div className="min-h-screen p-6 space-y-6 bg-slate-50 dark:bg-slate-950">
 
-      
+      {/* HEADER */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold dark:text-white">Dashboard</h1>
 
-      {/* MAIN CONTENT */}
-      <div className="flex-1 min-h-screen p-6 transition-all duration-300 bg-slate-50 dark:bg-gray-800">
+        <div className="flex gap-3">
+          <Link to="/add" className="px-4 py-2 text-white bg-indigo-600 rounded-lg">
+            Add Transaction
+          </Link>
 
-        {/* HEADER */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800 dark:text-white">
-              Dashboard
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-gray-300">
-              Your finance overview
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-
-            
-
-            {/* EXPORT */}
-            <button
-              onClick={handleExport}
-              className="px-4 py-2 text-white bg-green-500 rounded-lg hover:bg-green-600"
-            >
-              Export CSV
-            </button>
-          </div>
+          <button onClick={handleExport} className="px-4 py-2 bg-gray-200 rounded-lg">
+            Export CSV
+          </button>
         </div>
-
-        {/* ALERT */}
-        {data?.alert && (
-          <div className="p-4 mb-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded">
-            ⚠️ {data.alert?.message} (₹{data.alert?.exceededBy})
-          </div>
-        )}
-
-        {/* FILTERS */}
-        <div className="flex gap-4 mb-6">
-          <select
-            className="p-2 border rounded dark:bg-gray-700 dark:text-white"
-            onChange={(e) =>
-              setFilters({ ...filters, type: e.target.value })
-            }
-          >
-            <option value="">All</option>
-            <option value="income">Income</option>
-            <option value="expense">Expense</option>
-          </select>
-
-          <select
-        value={category}
-        onChange={(e) => setCategory(e.target.value)}
-        className="w-full p-2 mb-3 border rounded dark:bg-gray-800 dark:text-white"
-      >
-        <option value="">Select Category</option>
-        <option value="food">Food</option>
-        <option value="transport">Transport</option>
-        <option value="shopping">Shopping</option>
-        <option value="bills">Bills</option>
-        <option value="salary">Salary</option>
-        <option value="other">Other</option>
-      </select>
-
-      {/* CUSTOM CATEGORY */}
-      {category === "other" && (
-        <input
-          type="text"
-          placeholder="Enter custom category"
-          value={customCategory}
-          onChange={(e) => setCustomCategory(e.target.value)}
-          className="w-full p-2 mb-3 border rounded dark:bg-gray-800 dark:text-white"
-        />
-      )}
-        </div>
-
-        {/* LOADING */}
-        {isLoading ? (
-          <div className="p-6 bg-white rounded shadow">Loading...</div>
-        ) : (
-          <>
-            {/* CARDS */}
-            <div className="grid grid-cols-1 gap-6 mb-6 sm:grid-cols-2 lg:grid-cols-3">
-
-              <div className="p-6 text-white transition shadow bg-gradient-to-r from-green-400 to-green-600 rounded-xl hover:scale-105">
-                <p>Income</p>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(data.totalIncome)}
-                </p>
-              </div>
-
-              <div className="p-6 text-white transition shadow bg-gradient-to-r from-red-400 to-red-600 rounded-xl hover:scale-105">
-                <p>Expense</p>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(data.totalExpense)}
-                </p>
-              </div>
-
-              <div className="p-6 text-white transition shadow bg-gradient-to-r from-blue-400 to-blue-600 rounded-xl hover:scale-105">
-                <p>Balance</p>
-                <p className="text-2xl font-bold">
-                  {formatCurrency(data.balance)}
-                </p>
-              </div>
-
-            </div>
-
-            {/* CHART + INSIGHTS */}
-            <div className="grid grid-cols-1 gap-6 mb-6 md:grid-cols-2">
-              <Chart
-                income={data?.totalIncome || 0}
-                expense={data?.totalExpense || 0}
-              />
-              <Insights />
-            </div>
-
-            
-
-          </>
-        )}
       </div>
+
+      {/* ALERT */}
+      {data.alert && (
+        <div className="p-4 text-red-700 bg-red-100 border-l-4 border-red-500 rounded">
+          ⚠️ {data.alert.message} (₹{data.alert.exceededBy})
+        </div>
+      )}
+
+      {/* LOADING */}
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <>
+          {/* CARDS */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            <StatCard label="Income" value={fmt(data.totalIncome)} icon="💰" color="bg-green-100" />
+            <StatCard label="Expense" value={fmt(data.totalExpense)} icon="💸" color="bg-red-100" />
+            <StatCard label="Balance" value={fmt(data.balance)} icon="⚖️" color="bg-blue-100" />
+            <StatCard label="Savings %" value={`${savingsRate}%`} icon="📊" color="bg-yellow-100" />
+          </div>
+
+          {/* CHART + INSIGHTS */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            
+            <Chart
+    income={data.totalIncome}
+    expense={data.totalExpense}
+    type="overview"
+  />
+
+  <Chart
+    transactions={allTransactions}
+    type="category"
+  />
+            <Insights />
+            
+        {/* RECENT */}
+          <RecentActivity
+            transactions={recentTransactions}
+            loading={txLoading}
+          />
+          </div>
+
+          
+        </>
+      )}
     </div>
   );
 };

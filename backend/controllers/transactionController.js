@@ -37,14 +37,38 @@ export const getTransactions = async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 5;
 
+    const { type, category } = req.query;
+
     const skip = (page - 1) * limit;
 
-    const transactions = await Transaction.find({ userId: req.user._id })
+    // 🔥 BUILD FILTER OBJECT
+    let filter = {
+      userId: req.user._id,
+    };
+
+    if (type) {
+      filter.type = type;
+    }
+
+    if (category) {
+      filter.category = category.toLowerCase();
+    }
+
+    // 🔥 FETCH DATA
+    const transactions = await Transaction.find(filter)
       .skip(skip)
       .limit(limit)
       .sort({ createdAt: -1 });
 
-    res.json(transactions);
+    // 🔥 TOTAL COUNT (for pagination later)
+    const total = await Transaction.countDocuments(filter);
+
+    res.json({
+      transactions,
+      total,
+      page,
+      pages: Math.ceil(total / limit),
+    });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
