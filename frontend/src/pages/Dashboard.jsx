@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 
-import Sidebar from "../components/Sidebar";
 import AddTransaction from "../components/AddTransaction";
 import TransactionList from "../components/TransactionList";
 import Chart from "../components/Chart";
@@ -9,7 +8,7 @@ import Insights from "../components/Insights";
 
 import { useContext } from "react";
 import { ThemeContext } from "../context/ThemeContext";
-import { FaMoon, FaSun } from "react-icons/fa";
+
 
 const Dashboard = () => {
   const [data, setData] = useState({
@@ -18,6 +17,8 @@ const Dashboard = () => {
     balance: 0,
     alert: null,
   });
+  const [category, setCategory] = useState("");
+  const [customCategory, setCustomCategory] = useState("");
 
   const [filters, setFilters] = useState({
     type: "",
@@ -83,8 +84,7 @@ const Dashboard = () => {
   return (
     <div className="flex">
 
-      {/* SIDEBAR */}
-      <Sidebar />
+      
 
       {/* MAIN CONTENT */}
       <div className="flex-1 min-h-screen p-6 transition-all duration-300 bg-slate-50 dark:bg-gray-800">
@@ -102,13 +102,7 @@ const Dashboard = () => {
 
           <div className="flex items-center gap-4">
 
-            {/* DARK MODE TOGGLE */}
-            <button
-              onClick={() => setDark(!dark)}
-              className="text-xl text-gray-600 dark:text-white"
-            >
-              {dark ? <FaSun /> : <FaMoon />}
-            </button>
+            
 
             {/* EXPORT */}
             <button
@@ -140,13 +134,30 @@ const Dashboard = () => {
             <option value="expense">Expense</option>
           </select>
 
-          <input
-            placeholder="Category"
-            className="p-2 border rounded dark:bg-gray-700 dark:text-white"
-            onChange={(e) =>
-              setFilters({ ...filters, category: e.target.value })
-            }
-          />
+          <select
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        className="w-full p-2 mb-3 border rounded dark:bg-gray-800 dark:text-white"
+      >
+        <option value="">Select Category</option>
+        <option value="food">Food</option>
+        <option value="transport">Transport</option>
+        <option value="shopping">Shopping</option>
+        <option value="bills">Bills</option>
+        <option value="salary">Salary</option>
+        <option value="other">Other</option>
+      </select>
+
+      {/* CUSTOM CATEGORY */}
+      {category === "other" && (
+        <input
+          type="text"
+          placeholder="Enter custom category"
+          value={customCategory}
+          onChange={(e) => setCustomCategory(e.target.value)}
+          className="w-full p-2 mb-3 border rounded dark:bg-gray-800 dark:text-white"
+        />
+      )}
         </div>
 
         {/* LOADING */}
@@ -189,11 +200,7 @@ const Dashboard = () => {
               <Insights />
             </div>
 
-            {/* ADD TRANSACTION */}
-            <AddTransaction refresh={fetchData} />
-
-            {/* TRANSACTION LIST */}
-            <TransactionList refresh={fetchData} filters={filters} />
+            
 
           </>
         )}
