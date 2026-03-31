@@ -18,7 +18,7 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const apiBaseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const apiBaseUrl = import.meta.env.VITE_API_URL ;
       const res = await axios.post(`${apiBaseUrl}/api/auth/login`, {
         email: email.trim(),
         password,
@@ -40,16 +40,16 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100 px-4 py-8">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl sm:p-8">
-        <h1 className="mb-2 text-center text-3xl font-bold text-slate-800">Welcome back</h1>
-        <p className="mb-6 text-center text-sm text-slate-500">
+    <div className="flex items-center justify-center min-h-screen px-4 py-8 bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
+      <div className="w-full max-w-md p-6 bg-white shadow-xl rounded-2xl sm:p-8">
+        <h1 className="mb-2 text-3xl font-bold text-center text-slate-800">Welcome back</h1>
+        <p className="mb-6 text-sm text-center text-slate-500">
           Sign in to continue to your dashboard
         </p>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
+            <label htmlFor="email" className="block mb-1 text-sm font-medium text-slate-700">
               Email
             </label>
             <input
@@ -59,12 +59,12 @@ const Login = () => {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full px-3 py-2 border rounded-lg border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
+            <label htmlFor="password" className="block mb-1 text-sm font-medium text-slate-700">
               Password
             </label>
             <input
@@ -74,12 +74,12 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
               required
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
+              className="w-full px-3 py-2 border rounded-lg border-slate-300 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
             />
           </div>
 
           {error && (
-            <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
+            <p className="px-3 py-2 text-sm text-red-600 border border-red-200 rounded-md bg-red-50">
               {error}
             </p>
           )}
@@ -92,7 +92,7 @@ const Login = () => {
             {isLoading ? "Signing in..." : "Login"}
           </button>
 
-          <p className="text-center text-sm text-slate-600">
+          <p className="text-sm text-center text-slate-600">
             Don&apos;t have an account?{" "}
             <button
               type="button"
