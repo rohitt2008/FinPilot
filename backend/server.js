@@ -20,7 +20,10 @@ connectDB();
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: "https://fin-pilot-six.vercel.app",
+  credentials: true
+}));
 app.use("/api/auth" , authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/analytics", analyticsRoutes);
