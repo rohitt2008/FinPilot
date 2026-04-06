@@ -1,4 +1,4 @@
-# 💸 FinPilot — Personal Finance Tracker (SaaS-Level)
+# 💸 FinPilot — Personal Finance Tracker 
 
 > A full-stack, production-ready personal finance tracker with analytics, smart insights, and modern UI.
 
